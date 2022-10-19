@@ -1,9 +1,8 @@
-import { API } from './api'
-import { BTC_URL } from './constants'
+import Bitcoin from './controller/btc.controller'
 
 const main = async () => {
-  const btcApi = new API(BTC_URL)
-  const btc = await btcApi.get()
+  const btcApi = new Bitcoin()
+  const btc = await btcApi.getData()
   console.log(btc)
 }
 
