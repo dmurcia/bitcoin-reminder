@@ -1,34 +1,69 @@
-import { BTC_URL } from '../constant'
-import { createArray, getMedian } from '../helper'
-import { BTC } from '../interface'
+import { BTC_URL, DAYS_LIMIT, FNG_THE_HIGHEST, FNG_THE_SMALLEST, HOURS_24 } from '../constant'
+import { createArray, getMedian, isObjectEmpty } from '../helper'
+import Email_helper from '../helper/email'
+import { BTC, strategyData } from '../interface'
 import API from '../model/api.model'
 import BTC_Model from '../model/btc.model'
 import Fear_Greed from './fng.controller'
 
 export default class Bitcoin {
+  private fearGreed
+  private emailHelper
+
+  constructor() {
+    this.fearGreed = new Fear_Greed()
+    this.emailHelper = new Email_helper()
+  }
+
   /**
    * It gets bitcoin information every day
    */
   public async startProcess() {
-    // setInterval(async () => {
-    const fearGreed = new Fear_Greed()
-    const fngData = await fearGreed.getTodayData()
-    const bitcoinsData = await this.getAll()
-    const btcTotayData = await this.getTodayData()
-    if (bitcoinsData.length >= 10) {
-      const btcArray = createArray(bitcoinsData)
+    setInterval(async () => {
+      const fngData = await this.fearGreed.getTodayData()
+      const btcsData = await this.getAll()
+      const btcTotayData = await this.getTodayData()
+
+      if (isObjectEmpty(fngData) || isObjectEmpty(btcsData) || isObjectEmpty(btcTotayData)) {
+        throw new Error('Data is not available')
+      }
+
+      const btcArray = createArray(btcsData)
       const median = getMedian(btcArray)
-      console.log(median)
+
+      const strategyData: strategyData = {
+        fngValue: parseInt(fngData.data[0].value),
+        lastPrice: btcTotayData.last_trade_price,
+        median: median,
+      }
+
+      console.log(strategyData)
+
+      this.emailHelper.sendEmail('test@test.com', this.getBitcoinMessage(strategyData))
+
+      this.store(btcTotayData)
+    }, HOURS_24)
+  }
+
+  private getBitcoinMessage({ lastPrice, median, fngValue }: strategyData): string {
+    if (lastPrice < median && fngValue < FNG_THE_SMALLEST) {
+      return 'Buy Bitcoin'
+    } else if (lastPrice > median && fngValue > FNG_THE_HIGHEST) {
+      return 'Sell Bitcoin'
+    } else {
+      return 'Hold'
     }
-    this.store(btcTotayData)
-    // }, 1000)
   }
 
   /**
    * @returns All the data stored in the DB
    */
   private async getAll(): Promise<Array<BTC>> {
-    return await BTC_Model.find().sort({ timestamp: -1 }).limit(10)
+    try {
+      return await BTC_Model.find().sort({ timestamp: -1 }).limit(DAYS_LIMIT)
+    } catch (error: unknown) {
+      throw new Error('Could not acquire bitcoins data from BTC_Model')
+    }
   }
 
   /**
@@ -36,15 +71,23 @@ export default class Bitcoin {
    * @param btcData
    */
   private async store(btcData: BTC) {
-    const newBTC = new BTC_Model(btcData)
-    await newBTC.save()
+    try {
+      const newBTC = new BTC_Model(btcData)
+      await newBTC.save()
+    } catch (error: unknown) {
+      throw new Error('Could not store bitcoin data')
+    }
   }
 
   /**
    * @returns today's bitcoin data
    */
   public async getTodayData(): Promise<BTC> {
-    const api = new API(BTC_URL)
-    return await api.fetchTodayData<BTC>()
+    try {
+      const api = new API(BTC_URL)
+      return await api.fetchTodayData<BTC>()
+    } catch (error) {
+      throw new Error('Could not acquire bitcoin data from btc api')
+    }
   }
 }

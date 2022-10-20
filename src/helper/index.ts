@@ -1,7 +1,18 @@
 import { BTC } from '../interface'
 
+export const isObjectEmpty = (obj: object) => Object.keys(obj).length === 0
+
+/**
+ * Create a plain structure of an array
+ * @param data
+ * @returns plain array
+ */
 export const createArray = (data: Array<BTC>): Array<number> => data.map((obj) => obj['last_trade_price'])
 
+/**
+ * @param data plain array of numbers
+ * @returns the median of the numbers
+ */
 export const getMedian = (data: Array<number>): number => {
   const sorted = data.sort((a, b) => a - b)
   const sortedleft = sorted.length / 2
