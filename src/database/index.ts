@@ -2,19 +2,24 @@ import mongoose from 'mongoose'
 
 const URI = 'mongodb://localhost/bitcoin-reminder'
 
+const options = { keepAlive: true, keepAliveInitialDelay: 300000, serverSelectionTimeoutMS: 5000 }
+
 const main = async () => {
-  await mongoose
-    .connect(URI, { keepAlive: true, keepAliveInitialDelay: 300000, serverSelectionTimeoutMS: 5000 })
-    .catch((err) => console.log(err))
+  initEvents()
+  try {
+    await mongoose.connect(URI, options)
+  } catch (error) {
+    console.log(`Connection failed ${error}`)
+  }
+}
+
+const initEvents = () => {
   const connection = mongoose.connection
-  connection.once('connecting', () => {
+  connection.on('connecting', () => {
     console.log(`DB is connecting`)
   })
-  connection.once('connected', () => {
-    console.log(`DB is connected`)
-  })
-  connection.once('open', () => {
-    console.log(`DB is connected`)
+  connection.on('open', () => {
+    console.log(`DB is open`)
   })
 }
 

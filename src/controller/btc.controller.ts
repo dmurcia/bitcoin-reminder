@@ -19,32 +19,43 @@ export default class Bitcoin {
    * It gets bitcoin information every day
    */
   public async startProcess() {
+    const fngData = await this.fearGreed.getTodayData()
+    const btcsData = await this.getAll()
+    const btcTotayData = await this.getTodayData()
+
+    if (isObjectEmpty(fngData) || isObjectEmpty(btcsData) || isObjectEmpty(btcTotayData)) {
+      throw new Error('Data is not available')
+    }
+
+    const btcArray = createArray(btcsData)
+    const median = getMedian(btcArray)
+
+    const strategyData: strategyData = {
+      fngValue: parseInt(fngData.data[0].value),
+      lastPrice: btcTotayData.last_trade_price,
+      median: median,
+    }
+
+    this.emailHelper.sendEmail('test@test.com', this.getBitcoinMessage(strategyData))
+
+    this.store(btcTotayData)
+  }
+
+  /**
+   * Start the store the data every day
+   */
+  public start24Interval() {
     setInterval(async () => {
-      const fngData = await this.fearGreed.getTodayData()
-      const btcsData = await this.getAll()
-      const btcTotayData = await this.getTodayData()
-
-      if (isObjectEmpty(fngData) || isObjectEmpty(btcsData) || isObjectEmpty(btcTotayData)) {
-        throw new Error('Data is not available')
-      }
-
-      const btcArray = createArray(btcsData)
-      const median = getMedian(btcArray)
-
-      const strategyData: strategyData = {
-        fngValue: parseInt(fngData.data[0].value),
-        lastPrice: btcTotayData.last_trade_price,
-        median: median,
-      }
-
-      console.log(strategyData)
-
-      this.emailHelper.sendEmail('test@test.com', this.getBitcoinMessage(strategyData))
-
-      this.store(btcTotayData)
+      this.startProcess()
     }, HOURS_24)
   }
 
+  /**
+   * Check these scenarios
+   * - If last bitcoin price is lower than the median and fng value is lower than FNG_THE_SMALLEST return "Buy Bitcoin"
+   * - If last bitcoin price is higher than the median and fng value is higher than FNG_THE_HIGHEST return "Buy Bitcoin"
+   * - If the conditions are not fulfilled return "Hold"
+   */
   private getBitcoinMessage({ lastPrice, median, fngValue }: strategyData): string {
     if (lastPrice < median && fngValue < FNG_THE_SMALLEST) {
       return 'Buy Bitcoin'
