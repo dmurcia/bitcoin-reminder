@@ -18,7 +18,7 @@ export default class Bitcoin {
   /**
    * It gets bitcoin information every day
    */
-  public async startProcess() {
+  public async build() {
     const fngData = await this.fearGreed.getTodayData()
     const btcsData = await this.getAll()
     const btcTotayData = await this.getTodayData()
@@ -36,7 +36,9 @@ export default class Bitcoin {
       median: median,
     }
 
-    this.emailHelper.sendEmail('test@test.com', this.getBitcoinMessage(strategyData))
+    if (btcsData.length >= DAYS_LIMIT) {
+      this.emailHelper.sendEmail('test@test.com', this.getBitcoinMessage(strategyData))
+    }
 
     this.store(btcTotayData)
   }
@@ -46,7 +48,7 @@ export default class Bitcoin {
    */
   public start24Interval() {
     setInterval(async () => {
-      this.startProcess()
+      this.build()
     }, HOURS_24)
   }
 

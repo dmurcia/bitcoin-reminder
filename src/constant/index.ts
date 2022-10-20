@@ -12,10 +12,10 @@ export const fetchOptions: { headers: object } = {
 }
 
 // How many data will get
-export const DAYS_LIMIT = 30
+export const DAYS_LIMIT: number = 30
 // The smalllest Fear & Greed Index accepted
-export const FNG_THE_SMALLEST = 20
+export const FNG_THE_SMALLEST: number = 20
 // The highest Fear & Greed Index accepted
-export const FNG_THE_HIGHEST = 80
+export const FNG_THE_HIGHEST: number = 80
 // Update data each day
-export const HOURS_24 = 1000 * 60 * 60 * 24
+export const HOURS_24: number = 1000 * 60 * 60 * 24
