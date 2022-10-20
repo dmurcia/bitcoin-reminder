@@ -8,7 +8,7 @@ export default class API {
     this.URL = URL
   }
 
-  public fetchData = async <T>(): Promise<T> => {
+  public fetchTodayData = async <T>(): Promise<T> => {
     try {
       const { data, status } = await axios.get<T>(this.URL, fetchOptions.headers)
       if (status != STATUS.OK) {
